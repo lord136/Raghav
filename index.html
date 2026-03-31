@@ -707,7 +707,11 @@ try {
       [/\bprogamming\b/gi, 'programming'],
       [/\bporgramming\b/gi, 'programming'],
       [/\bdefination\b/gi, 'definition'],
-      [/\bhistry\b/gi, 'history']
+      [/\bhistry\b/gi, 'history'],
+      [/\bbecame\b/gi, 'become'],
+      [/\bpower ful\b/gi, 'powerful'],
+      [/\bpoweful\b/gi, 'powerful'],
+      [/\bimrove\b/gi, 'improve']
     ];
     replacements.forEach(function(entry) {
       normalized = normalized.replace(entry[0], entry[1]);
@@ -1170,7 +1174,7 @@ try {
     }
     if (text.toLowerCase().indexOf('open ') === 0) return false;
     if (cleaned.split(' ').length < 3) return false;
-    return /\b(strategy|improve|better|daily|habit|routine|confidence|discipline|focus|overthinking|plan|compare|choose|decision|decide|help me|what should i do|should i|steps|step by step|deal with|handle|solve|fix|situation|stressed|anxious|confused|advice|learn|explain simply|simple words|example|real example|matter in real life|summarize|summary|key points|important|what should i do first|make this simpler)\b/.test(cleaned);
+    return /\b(strategy|improve|better|daily|habit|routine|confidence|discipline|focus|overthinking|plan|compare|choose|decision|decide|help me|what should i do|should i|steps|step by step|deal with|handle|solve|fix|situation|stressed|anxious|confused|advice|learn|explain simply|simple words|example|real example|matter in real life|summarize|summary|key points|important|what should i do first|make this simpler|become|powerful|reasons? to|give reasons?|how can i become|how to become)\b/.test(cleaned);
   }
 
   function classifyReplyLane(text) {
