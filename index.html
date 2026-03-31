@@ -951,32 +951,47 @@ try {
 
   function getFollowupPrompts(lane, sourceText) {
     var term = extractDefinitionTerm(sourceText || '') || (sourceText || '').trim();
+    var normalized = normalizeIntentText(sourceText || '');
     if (lane === 'Definition' && term) {
       return [
-        'Explain ' + term + ' in simple words',
-        'Give me a real example of ' + term,
-        'Why does ' + term + ' matter in real life'
+        'Explain this simply',
+        'Give a real example',
+        'Search deeper on Google'
       ];
     }
     if (lane === 'Reference') {
       return [
-        'Summarize ' + sourceText + ' simply',
-        'Tell me the key points of ' + sourceText,
-        'Why is ' + sourceText + ' important'
+        'Summarize this simply',
+        'Tell me key points',
+        'Open source page'
       ];
     }
     if (lane === 'Reasoning') {
+      if (/overthinking|stress|anxious|confused/.test(normalized)) {
+        return [
+          'Give me steps',
+          'Make it simpler',
+          'Open calming video'
+        ];
+      }
+      if (/confidence|discipline|focus|routine|habit|better|improve/.test(normalized)) {
+        return [
+          'Give me steps',
+          'Make a daily plan',
+          'Search examples'
+        ];
+      }
       return [
-        'Give me step by step advice for this: ' + sourceText,
-        'Make this simpler for me: ' + sourceText,
-        'What should I do first about this: ' + sourceText
+        'Give me steps',
+        'Make it simpler',
+        'Search this on Google'
       ];
     }
     if (lane === 'Weather') {
       return [
         'Weather in Delhi',
         'Weather in Mumbai',
-        'Weather tomorrow'
+        'Open full forecast'
       ];
     }
     return [];
@@ -993,6 +1008,50 @@ try {
       chip.className = 'follow-chip';
       chip.textContent = prompt;
       chip.addEventListener('click', function() {
+        if (prompt === 'Search deeper on Google' || prompt === 'Search this on Google' || prompt === 'Search examples') {
+          triggerGoogleSearch(sourceText);
+          return;
+        }
+        if (prompt === 'Open calming video') {
+          mobileOpen('https://www.youtube.com/results?search_query=' + encodeURIComponent((sourceText || '') + ' calming advice'));
+          return;
+        }
+        if (prompt === 'Open source page') {
+          triggerReferencePage(sourceText);
+          return;
+        }
+        if (prompt === 'Open full forecast') {
+          triggerGoogleSearch('weather ' + sourceText);
+          return;
+        }
+        if (prompt === 'Explain this simply') {
+          submitFollowupPrompt('Explain ' + (extractDefinitionTerm(sourceText || '') || sourceText || '') + ' in simple words');
+          return;
+        }
+        if (prompt === 'Give a real example') {
+          submitFollowupPrompt('Give me a real example of ' + (extractDefinitionTerm(sourceText || '') || sourceText || 'this'));
+          return;
+        }
+        if (prompt === 'Summarize this simply') {
+          submitFollowupPrompt('Summarize ' + sourceText + ' simply');
+          return;
+        }
+        if (prompt === 'Tell me key points') {
+          submitFollowupPrompt('Tell me the key points of ' + sourceText);
+          return;
+        }
+        if (prompt === 'Give me steps') {
+          submitFollowupPrompt('Give me step by step advice for this: ' + sourceText);
+          return;
+        }
+        if (prompt === 'Make it simpler') {
+          submitFollowupPrompt('Make this simpler for me: ' + sourceText);
+          return;
+        }
+        if (prompt === 'Make a daily plan') {
+          submitFollowupPrompt('Make a daily plan for this: ' + sourceText);
+          return;
+        }
         submitFollowupPrompt(prompt);
       });
       wrap.appendChild(chip);
@@ -1147,6 +1206,13 @@ try {
     updateWorkingMessage();
     if (workingTimer) clearInterval(workingTimer);
     workingTimer = setInterval(updateWorkingMessage, 250);
+  }
+
+  async function showStaticWorkingThenReply(text, lane, sourceText) {
+    showDots('Raghav Beta');
+    await new Promise(function(resolve) { setTimeout(resolve, 480); });
+    hideDots();
+    await streamReply(text, lane, sourceText);
   }
 
   function hideWorkingMessage() {
@@ -1980,8 +2046,12 @@ try {
     try {
       var resp = await getResponse(processedText);
       if (useLocalModel) hideWorkingMessage();
-      else hideDots();
-      await streamReply(resp, replyLane, processedText);
+      if (useLocalModel) {
+        await streamReply(resp, replyLane, processedText);
+      } else {
+        hideDots();
+        await showStaticWorkingThenReply(resp, replyLane, processedText);
+      }
     } finally {
       hideWorkingMessage();
       hideDots();
@@ -2177,10 +2247,12 @@ try {
       localStorage.setItem('orbiton_model_guide', 'yes');
       showGuideCard({
         kicker: 'Model',
-        title: 'Raghav Beta is already selected.',
-        body: 'This is the one live model in the app right now: tiny, fast, respectful, and built for everyday phone use.',
+        title: 'How Raghav Beta answers',
+        body: 'Raghav Beta is the one live model in the app. It is tiny, phone-first, and used mainly for reasoning. Definitions, references, weather, and direct actions usually take faster lanes first.',
         points: [
-          { title: 'Raghav Beta', text: 'The active model for chat replies on your phone.' }
+          { title: 'Reasoning lane', text: 'Used for things like overthinking, confidence, decisions, improvement, and step-by-step help.' },
+          { title: 'Fast lanes first', text: 'Definitions, sources, weather, shopping, and direct actions usually use faster paths before AI.' },
+          { title: 'Private on phone', text: 'When Raghav Beta works, it stays on the phone-side flow and gives a calmer, more personal reply style.' }
         ],
         primaryLabel: 'Open model',
         secondaryLabel: 'Later',
